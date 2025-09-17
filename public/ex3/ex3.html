@@ -33,24 +33,63 @@
     </div>
     
     <script>
-        function getCategories() {
+        async function getCategories() {
             // Fetch categories from the server using Axios
             // and display them in the select element
             // url: http://localhost:3010/categories
+            try {
+            const response = await axios.get("/categories");
+            showCategories(response.data);
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+        }
 
         }
 
         function showCategories(categories) {
             // Display the categories in the select element
-            
+            const selectElem = document.getElementById("selectCategory");
+
+            // Clear old options (keep first two: "To select" and "All")
+            while (selectElem.options.length > 2) {
+            selectElem.remove(2);
+            }
+
+            // DOM API: create <option> for each category
+            categories.forEach(category => {
+            const optionElem = document.createElement("option");
+            optionElem.value = category;
+            optionElem.innerText = category;
+            selectElem.appendChild(optionElem);
+            });
         }
 
-        function getItems() {
+        async function getItems() {
             // Fetch items based on the selected category
             // If "To select" is chosen, do nothing
             // If "All" is chosen, fetch all items
             // If a specific category is chosen, fetch items for that category
             // url: http://localhost:3010/items?category=categoryName
+            const category = document.getElementById("selectCategory").value;
+            const itemsDiv = document.getElementById("itemsList");
+
+            if (category === "0") {
+                itemsDiv.innerHTML = "<p class='text-center'>No items</p>";
+                return;
+            }
+
+            try {
+                let url = "/items";
+                if (category !== "all") {
+                    url += `?category=${category}`;
+                }
+
+                const response = await axios.get(url);
+                showItems(response.data);
+            } catch (error) {
+                console.error("Error fetching items:", error);
+                itemsDiv.innerHTML = "<p class='text-center'>Error loading items</p>";
+            }
             
         }
 
@@ -58,7 +97,48 @@
             // Display the items in the itemsList div
             // Each item should be displayed in a bootstrap card format
             // The display should be responsive 3 columns on large screens, 2 columns on medium screens, and 1 column on small screens
-            
+            const itemsDiv = document.getElementById("itemsList");
+            itemsDiv.innerHTML = ""; // clear old stuff
+
+            if (!items || items.length === 0) {
+                const p = document.createElement("p");
+                p.className = "text-center";
+                p.innerText = "No items found";
+                itemsDiv.appendChild(p);
+                return;
+            }
+
+            items.forEach(item => {
+                // 1. create column
+                const colDiv = document.createElement("div");
+                colDiv.className = "col-lg-4 col-md-6 col-sm-12 mb-3";
+
+                // 2. create card
+                const cardDiv = document.createElement("div");
+                cardDiv.className = "card h-100";
+
+                // 3. create card body
+                const cardBody = document.createElement("div");
+                cardBody.className = "card-body";
+
+                // 4. create title
+                const title = document.createElement("h5");
+                title.className = "card-title";
+                title.innerText = item.name;
+
+                // 5. create price text
+                const price = document.createElement("p");
+                price.className = "card-text";
+                price.innerText = `Price: $${item.price}`;
+
+                // 6. wire everything together
+                cardBody.appendChild(title);
+                cardBody.appendChild(price);
+                cardDiv.appendChild(cardBody);
+                colDiv.appendChild(cardDiv);
+
+                itemsDiv.appendChild(colDiv);
+            });
 
         }
 
